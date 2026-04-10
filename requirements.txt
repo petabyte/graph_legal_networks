@@ -1,9 +1,8 @@
 datasets>=2.20.0
 eyecite>=2.6.0
-graphiti-core>=0.3.0
+graphiti-core>=0.3.0,<1.0.0
 kuzu>=0.6.0
 networkx>=3.3
-python-louvain>=0.16
 scikit-learn>=1.5.0
 transformers>=4.40.0
 torch>=2.2.0
