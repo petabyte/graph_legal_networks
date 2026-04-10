@@ -1,0 +1,17 @@
+datasets>=2.20.0
+eyecite>=2.6.0
+graphiti-core>=0.3.0
+kuzu>=0.6.0
+networkx>=3.3
+python-louvain>=0.16
+scikit-learn>=1.5.0
+transformers>=4.40.0
+torch>=2.2.0
+pandas>=2.2.0
+numpy>=1.26.0
+matplotlib>=3.9.0
+seaborn>=0.13.0
+anthropic>=0.28.0
+pyarrow>=16.0.0
+tqdm>=4.66.0
+pytest>=8.0.0
