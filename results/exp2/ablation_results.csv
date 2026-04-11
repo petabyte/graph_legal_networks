@@ -1,0 +1,11 @@
+feature_set,model,auc,precision,recall,f1
+text_only,RF,0.6021,0.5715,0.5667,0.5691
+text_only,LR,0.6948,0.6062,0.7142,0.6558
+graph_basic,RF,0.7354,0.8658,0.4102,0.5567
+graph_basic,LR,0.6755,0.9162,0.4277,0.5831
+graph_triangle,RF,0.6167,0.6858,0.4011,0.5062
+graph_triangle,LR,0.725,0.8362,0.478,0.6083
+graph_community,RF,0.6983,0.8339,0.3648,0.5075
+graph_community,LR,0.746,0.8724,0.4682,0.6094
+combined,RF,0.7439,0.8352,0.4074,0.5477
+combined,LR,0.7969,0.8805,0.4787,0.6202
