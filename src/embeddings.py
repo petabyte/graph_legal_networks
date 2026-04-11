@@ -32,7 +32,7 @@ class LegalBertEmbedder:
         """
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
-            batch = [_strip_html(t) if "<" in t else t for t in texts[i: i + batch_size]]
+            batch = [_strip_html(t) for t in texts[i: i + batch_size]]
             encoded = self.tokenizer(
                 batch,
                 padding=True,
