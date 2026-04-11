@@ -14,3 +14,4 @@ anthropic>=0.28.0
 pyarrow>=16.0.0
 tqdm>=4.66.0
 pytest>=8.0.0
+beautifulsoup4>=4.12.0
