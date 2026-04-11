@@ -1,123 +1,123 @@
 community,case_name,in_degree
-0,96405,88
-1,98441,12
-2,88640,1
-3,90138,2
-4,1292673,14
-5,93144,1
-6,87409,2
-7,103597,14
-8,88067,1
-9,102283,7
-10,87665,1
-11,87995,1
-12,94906,1
-13,110704,2
-14,89461,1
-15,112349,1
-16,94602,12
-17,100437,1
-18,93759,1
-19,109067,14
-20,95707,3
-21,96701,9
-22,99786,1
-23,103017,15
-24,88380,2
-25,97235,1
-26,106561,1
-27,95839,1
-28,108118,1
-29,108396,1
-30,95946,1
-31,100694,19
-32,98508,2
-33,91573,40
-34,87668,6
-35,2466309,1
-36,89591,1
-37,105511,19
-38,90817,1
-39,90246,1
-40,97239,1
-41,1487387,1
-42,91857,1
-43,95048,1
-44,97126,1
-45,89895,2
-46,88089,1
-47,90913,1
-48,88508,1
-49,89987,1
-50,91640,1
-51,108115,23
-52,103542,7
-53,88945,2
-54,86721,8
-55,88637,1
-56,93368,1
-57,93562,17
-58,92353,1
-59,88861,1
-60,103523,2
-61,105547,26
-62,97350,1
-63,100895,1
-64,90601,1
-65,99677,1
-66,91694,1
-67,96055,1
-68,102715,4
-69,106081,1
-70,90801,1
-71,89476,12
-72,105252,1
-73,104858,2
-74,90841,1
-75,2481231,1
-76,91498,1
-77,93942,1
-78,103915,15
-79,87844,1
-80,87055,1
-81,93580,1
-82,89303,1
-83,85551,1
-84,107757,1
-85,89231,1
-86,90969,2
-87,90636,2
-88,97393,1
-89,98816,1
-90,91895,1
-91,90139,1
-92,92152,2
-93,112201,1
-94,97486,2
-95,95551,1
-96,96038,1
-97,103309,1
-98,90987,1
-99,103778,1
-100,100010,11
-101,90335,1
-102,90899,1
-103,88210,1
-104,88549,2
-105,86453,1
-106,97756,2
-107,87258,1
-108,98046,1
-109,89378,12
-110,90354,1
-111,89899,1
-112,86111,1
-113,93352,1
-114,92407,1
-115,100600,1
-116,88773,1
-117,103040,1
-118,90114,1
-119,1087785,1
-120,93870,1
-121,87940,1
+0,United States V Detroit Timber Lumber Co,88
+1,Frank V Mangum,12
+2,Police Jury V Britton,1
+3,The Sabine,2
+4,United States V American Tobacco Co,14
+5,Pacific National Bank V Eaton,1
+6,Day V Washburn,2
+7,Glasser V United States,14
+8,Stansbury V United States,1
+9,New Colonial Ice Co V Helvering,7
+10,Kutter V Smith,1
+11,Supervisors V Rogers,1
+12,Kock V Emmerling,1
+13,Finnegan V Leu,2
+14,Selma And Meridian Railroad Company V Louisiana National Bank Of New,1
+15,Spallone V United States,1
+16,Robertson V Baldwin,12
+17,Davis V Donovan,1
+18,Southworth V United States,1
+19,United States V Kagama,14
+20,Turpin V Lemon,3
+21,Mccullough V Virginia,9
+22,Miller Lux Inc V Sacramento San Joaquin Drainage District,1
+23,United States V Carolene Products Co,15
+24,Hoffman Co V Bank Of Milwaukee,2
+25,Lutcher Moore Lumber Co V Knight,1
+26,Michigan National Bank V Robertson,1
+27,Sawyer V Piper,1
+28,Lewis V Martin,1
+29,Doherty V United States,1
+30,Peoples National Bank V Marye,1
+31,Pierce V Society Of Sisters,19
+32,New York Central Hudson River Railroad V Carr,2
+33,Boyd V United States,40
+34,United States V Stone,6
+35,Till V New Mexico,1
+36,Milner V Meek,1
+37,Textile Workers V Lincoln Mills Of Ala,19
+38,Gray V Howe,1
+39,Hawley V Upton,1
+40,Stewart V Griffith Ex Rel Ball,1
+41,Mitchell V Board Of Commrs Of Leavenworth Cty,1
+42,Meriwether V Muhlenburg County Court,1
+43,Holmes V Hurst,1
+44,Tiglao V Insular Government Of The Philippine Islands,1
+45,Airhart V Massieu,2
+46,Mandelbaum V The People,1
+47,United States V Fisher,1
+48,United States V Crusell,1
+49,Whitney V Cook,1
+50,Burke V Dulaney,1
+51,Dandridge V Williams,23
+52,Klaxon Co V Stentor Electric Manufacturing Co,7
+53,Perris V Higley,2
+54,United States V Ferreira,8
+55,Frow V De La Vega,1
+56,Barnett V Denison,1
+57,Monongahela Navigation Co V United States,17
+58,The Gazelle And Cargo,1
+59,Cooper V Omohundro,1
+60,Helvering V William Flaccus Oak Leather Co,2
+61,Roth V United States,26
+62,House V Mayes,1
+63,Wong Tai V United States,1
+64,Thatcher V Rockwell,1
+65,Minneapolis St Paul Sault Ste Marie Railway Co V Washburn Lignite,1
+66,Evans V Pike,1
+67,Sloan V United States,1
+68,United States V Esnault Pelterie,4
+69,Brotherhood Of Locomotive Engineers V Missouri Kansas Texas Railroad,1
+70,Hill V Harding,1
+71,Cromwell V County Of Sac,12
+72,United States V Brown,1
+73,Oleary V Brown Pacific Maxon Inc,2
+74,Gage V Pumpelly,1
+75,Haseltine V Central Bank Of Springfield,1
+76,United States V Price,1
+77,United States V Illinois Central Railroad,1
+78,Federal Power Commission V Hope Natural Gas Co,15
+79,Serrano V United States,1
+80,Pease V Peck,1
+81,Krementz V S Cottle Co,1
+82,Town Of Genoa V Woodruff,1
+83,Mcconnell V Trustees Of Town Of Lexington,1
+84,Lopinson V Pennsylvania,1
+85,The Colorado,1
+86,Sweeney V United States,2
+87,Lewis V Commissioners,2
+88,United States V Obrien,1
+89,Cissna V Tennessee,1
+90,Worden V Searls,1
+91,Gay V Parpart,1
+92,Aetna Life Ins Co V Middleport,2
+93,In Re Mcdonald,1
+94,United States V Congress Construction Co,2
+95,Guarantee Co Of North America V Mechanics Savings Bank Trust Co,1
+96,Boering V Chesapeake Beach Railway Co,1
+97,Germantown Trust Co V Commissioner,1
+98,Holland V Challen,1
+99,Robinette V Helvering,1
+100,Ng Fung Ho V White,11
+101,Wolff V New Orleans,1
+102,Steever V Rickman,1
+103,The Quickstep,1
+104,Smith V Mason,2
+105,Bein V Heath,1
+106,Gray V Taylor,2
+107,Emerson V Slater,1
+108,Piza Hermanos V Caldentey,1
+109,Southern Pacific Co V Denton,12
+110,Green V Fisk,1
+111,Hooper V Robinson,1
+112,Burton V Smith,1
+113,Sage V Louisiana Board Of Liquidation,1
+114,Brown V Sutton,1
+115,Blundell V Wallace,1
+116,Harrell V Beall,1
+117,Zerbst V Kidwell,1
+118,Terry V Little,1
+119,United States V Haley,1
+120,Robertson V Chapman,1
+121,Doe V Considine,1

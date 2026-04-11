@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -63,6 +64,18 @@ def load_scotus_cases(
     scotus = scotus.dropna(subset=[DATE_FIELD])
 
     scotus = scotus.reset_index(drop=True)
+
+    # Extract human-readable case name from absolute_url slug
+    # e.g. /opinion/2659301/mccutcheon-v-federal-election-commn/ → Mccutcheon V Federal Election Commn
+    def _slug_to_name(url: str) -> str | None:
+        if not isinstance(url, str):
+            return None
+        m = re.search(r"/opinion/\d+/([^/]+)/", url)
+        if not m:
+            return None
+        return m.group(1).replace("-", " ").replace("_", " ").title()
+
+    scotus["case_name"] = scotus["absolute_url"].apply(_slug_to_name)
 
     DATA_DIR.mkdir(exist_ok=True)
     scotus.to_parquet(cache_path, index=False)
