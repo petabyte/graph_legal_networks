@@ -31,7 +31,7 @@ from src.citation_extraction import build_edge_list
 from src.dataset import load_scotus_cases
 from src.graph_features import build_nx_graph
 
-RESULTS_DIR = Path("results/exp1")
+RESULTS_DIR = _PROJECT_ROOT / "results" / "exp1"
 
 
 def run() -> None:
