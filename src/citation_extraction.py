@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 
@@ -8,12 +9,14 @@ from eyecite import get_citations
 from eyecite.models import FullCaseCitation
 from tqdm import tqdm
 
-DATA_DIR = Path("data")
+DATA_DIR = Path(__file__).parent.parent / "data"
 _OPINION_ID_RE = re.compile(r"/opinions/(\d+)/")
 
 
 def extract_citations_from_text(text: str) -> list[str]:
     """Return list of citation strings found in text using eyecite."""
+    if not text or not text.strip():
+        return []
     citations = get_citations(text)
     return [
         str(c.token)
@@ -54,9 +57,12 @@ def build_edge_list(
     edges: list[dict] = []
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Building citation edges"):
         source_id = _norm_id(row["id"])
-        year = pd.to_datetime(row["date_created"], utc=True).year
+        ts = pd.to_datetime(row["date_created"], utc=True)
+        year = ts.year if ts is not pd.NaT else None
         raw = row.get("opinions_cited")
-        if raw is None or (hasattr(raw, "__len__") and len(raw) == 0):
+        if raw is None or (isinstance(raw, float) and math.isnan(raw)):
+            cited_uris = []
+        elif hasattr(raw, "__len__") and len(raw) == 0:
             cited_uris = []
         else:
             cited_uris = list(raw)
