@@ -1,5 +1,5 @@
 import pandas as pd
-from src.splitting import temporal_split, sample_negatives
+from src.splitting import temporal_split, sample_negatives, random_split
 
 
 def _make_edge_df() -> pd.DataFrame:
@@ -65,3 +65,26 @@ def test_sample_negatives_reproducible():
     n1 = sample_negatives(positive_pairs, all_nodes, existing_edges, seed=7)
     n2 = sample_negatives(positive_pairs, all_nodes, existing_edges, seed=7)
     assert n1 == n2
+
+
+def test_random_split_sizes():
+    edges = _make_edge_df()
+    train, test = random_split(edges, test_frac=0.2, seed=42)
+    assert len(train) + len(test) == len(edges)
+    assert len(test) == 1  # 20% of 5 = 1
+
+
+def test_random_split_no_overlap():
+    edges = _make_edge_df()
+    train, test = random_split(edges, test_frac=0.4, seed=0)
+    train_pairs = set(zip(train["source_id"], train["target_id"]))
+    test_pairs = set(zip(test["source_id"], test["target_id"]))
+    assert train_pairs.isdisjoint(test_pairs)
+
+
+def test_random_split_reproducible():
+    edges = _make_edge_df()
+    t1_train, t1_test = random_split(edges, seed=99)
+    t2_train, t2_test = random_split(edges, seed=99)
+    assert list(t1_train["source_id"]) == list(t2_train["source_id"])
+    assert list(t1_test["source_id"]) == list(t2_test["source_id"])

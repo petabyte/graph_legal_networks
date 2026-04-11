@@ -20,6 +20,22 @@ def temporal_split(
     return train, test
 
 
+def random_split(
+    edge_df: pd.DataFrame,
+    test_frac: float = 0.2,
+    seed: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Random 80/20 train/test split.
+    Used when reliable decision dates are unavailable.
+    """
+    shuffled = edge_df.sample(frac=1, random_state=seed).reset_index(drop=True)
+    n_test = int(len(shuffled) * test_frac)
+    test = shuffled.iloc[:n_test].reset_index(drop=True)
+    train = shuffled.iloc[n_test:].reset_index(drop=True)
+    return train, test
+
+
 def sample_negatives(
     positive_pairs: list[tuple[str, str]],
     all_nodes: list[str],
