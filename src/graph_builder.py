@@ -116,7 +116,7 @@ async def _ingest_cases(df: pd.DataFrame, graphiti) -> None:
         if not text.strip():
             continue
         ts = pd.to_datetime(row["date_created"], utc=True)
-        if ts is pd.NaT:
+        if pd.isnull(ts):
             continue
         await graphiti.add_episode(
             name=str(int(float(row["id"]))),
