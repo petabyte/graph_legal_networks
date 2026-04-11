@@ -30,7 +30,7 @@ import pandas as pd
 
 from src.citation_extraction import build_edge_list
 from src.dataset import load_scotus_cases
-from src.embeddings import LegalBertEmbedder, cosine_similarity_pairs
+from src.embeddings import load_or_compute_embeddings, cosine_similarity_pairs
 from src.graph_features import (
     build_nx_graph,
     compute_basic_features,
@@ -95,10 +95,8 @@ def run() -> None:
     all_nodes = list(G.nodes())
     existing_edges = set(zip(train_edges["source_id"].astype(str), train_edges["target_id"].astype(str)))
 
-    print(f"Computing {EMBED_MODEL} embeddings...")
-    embedder = LegalBertEmbedder(model_name=EMBED_MODEL)
     texts = df["html_with_citations"].fillna("").tolist()
-    embeddings = embedder.embed(texts, batch_size=16)
+    embeddings = load_or_compute_embeddings(texts, model_name=EMBED_MODEL, batch_size=16)
     id_to_idx = {str(int(float(row["id"]))): i for i, (_, row) in enumerate(df.iterrows())}
 
     # Build train pairs

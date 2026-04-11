@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import torch
 from transformers import AutoModel, AutoTokenizer
@@ -7,6 +9,7 @@ from transformers import AutoModel, AutoTokenizer
 from src.graph_builder import _strip_html
 
 MODEL_NAME = "nlpaueb/legal-bert-base-uncased"
+DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def _mean_pool(
@@ -48,6 +51,33 @@ class LegalBertEmbedder:
             emb = _mean_pool(output.last_hidden_state, encoded["attention_mask"])
             all_embeddings.append(emb.cpu().numpy())
         return np.vstack(all_embeddings)
+
+
+def load_or_compute_embeddings(
+    texts: list[str],
+    model_name: str = MODEL_NAME,
+    cache_path: Path | None = None,
+    batch_size: int = 32,
+) -> np.ndarray:
+    """
+    Load embeddings from cache if available, otherwise compute and save.
+    Cache path defaults to data/embeddings_<model_slug>.npy.
+    """
+    if cache_path is None:
+        slug = model_name.replace("/", "_").replace("-", "_")
+        cache_path = DATA_DIR / f"embeddings_{slug}.npy"
+
+    if cache_path.exists():
+        print(f"Loading cached embeddings from {cache_path}")
+        return np.load(str(cache_path))
+
+    print(f"Computing embeddings with {model_name} (this may take a while on CPU)...")
+    embedder = LegalBertEmbedder(model_name=model_name)
+    embeddings = embedder.embed(texts, batch_size=batch_size)
+    DATA_DIR.mkdir(exist_ok=True)
+    np.save(str(cache_path), embeddings)
+    print(f"Embeddings cached to {cache_path}")
+    return embeddings
 
 
 def cosine_similarity_pairs(
