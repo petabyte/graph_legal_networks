@@ -71,6 +71,23 @@ All top-10 cases are recognized constitutional precedents — *Boyd* (Fourth/Fif
 
 **Purpose:** Test whether graph structural features predict citations better than text embeddings alone, and isolate which feature classes contribute most.
 
+### What "predicting a citation" means
+
+The model is given a **pair of cases** and asked: *"Does case A cite case B?"* — a binary yes/no prediction.
+
+- A **positive example** is a real citation edge: case A actually cites case B in its opinion text
+- A **negative example** is a non-edge: case A does not cite case B (sampled randomly at 1:1 ratio)
+
+For each pair, the model sees features such as how many cases A and B both cite (common neighbors), whether A and B belong to the same Louvain community, and how semantically similar their opinion texts are (RoBERTa cosine similarity). It outputs a probability (0–1) that a citation exists. AUC measures how well it ranks true citation pairs above non-citation pairs across all classification thresholds.
+
+**Why this is useful for law:**
+
+A predicted citation is a prediction of legal relevance — if the model says "case A probably cites case B," it is saying "case B is probably a relevant precedent for the legal question in case A." This has three practical applications:
+
+1. **Finding missing precedents** — a lawyer working on a new matter can ask the model for cases that are structurally similar, surfacing relevant precedents that might otherwise be missed
+2. **Filling incomplete citation databases** — older SCOTUS opinions in this dataset have incomplete `opinions_cited` records; the model can infer likely missing citations
+3. **Cross-domain discovery** — cases with high betweenness centrality that the model flags as citation targets may reveal that two previously separate legal doctrines should be cited together
+
 **Setup:**
 - Train/test split: random 80/20 (5,728 train edges / 1,431 test edges)
 - Negative sampling: 1:1 ratio, per-source corruption (for each positive pair (u,v), sample a non-edge (u,w))
