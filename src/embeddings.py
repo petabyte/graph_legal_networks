@@ -20,8 +20,9 @@ def _mean_pool(
 
 class LegalBertEmbedder:
     def __init__(self, model_name: str = MODEL_NAME):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name).to(self.device)
         self.model.eval()
 
     def embed(self, texts: list[str], batch_size: int = 32) -> np.ndarray:
@@ -29,6 +30,7 @@ class LegalBertEmbedder:
         Embed a list of plain-text strings.
         Strips HTML automatically before tokenizing.
         Returns (N, 768) float32 mean-pooled embeddings.
+        Uses GPU automatically when available.
         """
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
@@ -40,6 +42,7 @@ class LegalBertEmbedder:
                 max_length=512,
                 return_tensors="pt",
             )
+            encoded = {k: v.to(self.device) for k, v in encoded.items()}
             with torch.no_grad():
                 output = self.model(**encoded)
             emb = _mean_pool(output.last_hidden_state, encoded["attention_mask"])
