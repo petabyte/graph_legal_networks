@@ -8,10 +8,15 @@ from networkx.algorithms.community import label_propagation_communities, louvain
 
 def build_nx_graph(edge_df: pd.DataFrame) -> nx.DiGraph:
     """Build a directed NetworkX graph from the citation edge DataFrame."""
-    G = nx.DiGraph()
-    for _, row in edge_df.iterrows():
-        G.add_edge(str(row["source_id"]), str(row["target_id"]))
-    return G
+    df = edge_df.copy()
+    df["source_id"] = df["source_id"].astype(str)
+    df["target_id"] = df["target_id"].astype(str)
+    return nx.from_pandas_edgelist(
+        df,
+        source="source_id",
+        target="target_id",
+        create_using=nx.DiGraph,
+    )
 
 
 def compute_basic_features(G: nx.DiGraph, pairs: list[tuple[str, str]]) -> np.ndarray:
