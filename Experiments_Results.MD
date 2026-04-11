@@ -139,6 +139,30 @@ A predicted citation is a prediction of legal relevance — if the model says "c
 
 **Purpose:** Validate that the graph recovers the known legal canon via centrality measures, without any supervision.
 
+### Why centrality measures legal influence
+
+A citation in law is a deliberate act of authority — when a court writes an opinion, it cites a prior case to say "this case controls our reasoning." The citation graph therefore encodes a directed network of legal authority: an edge from A to B means A invokes B as a source of law. This makes graph centrality a natural, unsupervised proxy for legal influence.
+
+Two complementary measures are used:
+
+---
+
+**PageRank** treats the citation graph as a random walk. Imagine a researcher who reads a SCOTUS opinion, then follows one of its citations at random, then follows a citation from that case, and so on — occasionally jumping to a random case to avoid getting stuck in cycles. The fraction of time this random walk spends on any given case is its PageRank score.
+
+In legal terms, PageRank captures **sustained authority**: a case scores high if it is not only cited often, but cited by cases that are themselves cited often. A case cited by many minor opinions scores lower than a case cited by a small number of landmark opinions that are themselves foundational. This mirrors how lawyers actually assess precedent weight — a citation from *Marbury V Madison* carries more authority than a citation from an obscure circuit ruling.
+
+The α = 0.85 damping factor means the random walk follows citations 85% of the time and jumps randomly 15% of the time, preventing any single densely-connected cluster from monopolising the score.
+
+---
+
+**Betweenness centrality** counts how often a case sits on the shortest path between two other cases in the graph. Formally, for every pair of cases (A, C), it counts the fraction of shortest citation paths from A to C that pass through case B, then sums this over all pairs.
+
+In legal terms, betweenness captures **doctrinal bridging**: a case scores high if it is the connective tissue between otherwise separate areas of law. A case that only one legal community cites heavily scores low on betweenness even if its in-degree is high — it is influential within one domain but not a bridge. By contrast, a case like *Shapiro V Thompson* (welfare benefits + right to travel + equal protection) is cited by multiple distinct communities, placing it on many cross-domain citation paths.
+
+This distinction from PageRank is meaningful: **PageRank finds the canon within a doctrine; betweenness finds the cases that created new doctrine by connecting two fields**.
+
+---
+
 ### Top 10 by PageRank (α = 0.85)
 
 | Case | PageRank |
