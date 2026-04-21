@@ -2,6 +2,8 @@ data/
 logs/
 paper/
 docs/
+*.parquet
+*.npy
 src/__pycache__/
 tests/__pycache__/
 **/__pycache__/
