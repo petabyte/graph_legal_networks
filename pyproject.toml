@@ -1,5 +1,5 @@
 [project]
-name = "ai-for-law"
+name = "graph-legal-networks"
 version = "0.1.0"
 requires-python = ">=3.11"
 

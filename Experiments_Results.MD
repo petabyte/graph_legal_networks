@@ -103,13 +103,17 @@ A predicted citation is a prediction of legal relevance — if the model says "c
 
 ### Feature Sets
 
-| Feature Set | Contents | Dimensions |
-|---|---|---|
-| `text_only` | Cosine similarity of RoBERTa embeddings | 1 |
-| `graph_basic` | Common neighbors, preferential attachment, Jaccard | 3 |
-| `graph_triangle` | graph_basic + triangle count, clustering coefficient | 5 |
-| `graph_community` | graph_triangle + same-community (Louvain + Label Prop) | 7 |
-| `combined` | All graph features + text similarity | 8 |
+| Feature Set | Contents | Dimensions | Source |
+|---|---|---|---|
+| `text_only` | Cosine similarity of RoBERTa embeddings | 1 | Text |
+| `graph_basic` | Common neighbors, preferential attachment, Jaccard | 3 | Citation graph |
+| `graph_triangle` | graph_basic + triangle count, clustering coefficient | 5 | Citation graph |
+| `graph_community` | graph_triangle + same-community (Louvain + Label Prop) | 7 | Citation graph |
+| `combined` | All graph features + text similarity | 8 | Citation graph + Text |
+| `semantic` | Entity Jaccard + shared entity count (Graphiti/Kuzu) | 2 | Semantic graph |
+| `combined_full` | All graph + text + semantic features | 10 | All sources |
+
+**Semantic features** are derived from the Graphiti/Kuzu knowledge graph: each SCOTUS opinion is processed by `qwen3.5:cloud` (via Ollama) to extract named entities (parties, courts, statutes, legal concepts), which are stored as `Entity` nodes in KuzuDB linked to the opinion's `Episodic` node via `MENTIONS` edges. The entity Jaccard similarity between two cases measures how much of their extracted legal vocabulary overlaps — a signal complementary to both citation structure and raw text embedding distance.
 
 ### Results
 
@@ -120,6 +124,10 @@ A predicted citation is a prediction of legal relevance — if the model says "c
 | graph_triangle | 0.617 | 0.725 | 0.506 | 0.608 |
 | graph_community | 0.698 | 0.746 | 0.508 | 0.609 |
 | **combined** | **0.744** | **0.797** | **0.548** | **0.620** |
+| semantic | TBD (re-run after ingestion) | TBD | TBD | TBD |
+| combined_full | TBD (re-run after ingestion) | TBD | TBD | TBD |
+
+*`semantic` and `combined_full` results will be populated after the Graphiti/Kuzu ingestion completes and `exp2_link_prediction.py` is re-run.*
 
 ### Key Findings
 
@@ -132,6 +140,8 @@ A predicted citation is a prediction of legal relevance — if the model says "c
 4. **Community membership adds value.** Adding community indicators (`graph_community`) improves LR AUC from 0.725 to 0.746 over `graph_triangle`, supporting the hypothesis that cases in the same legal domain community are more likely to cite each other.
 
 5. **High precision, lower recall** in RF models indicates the graph features are precise predictors when they fire, but miss many true citations — consistent with the known incompleteness of the `opinions_cited` column.
+
+6. **Semantic entity features (Graphiti/Kuzu):** Results pending ingestion completion. The hypothesis is that entity overlap adds a complementary signal — two cases discussing the same named legal entities (e.g. "First Amendment", "McCutcheon", "strict scrutiny") are more likely to cite each other, independent of their structural graph distance.
 
 ---
 

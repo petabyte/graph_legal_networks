@@ -37,14 +37,12 @@ from src.graph_features import (
     compute_community_features,
     compute_triangle_features,
 )
+from src.kuzu_features import load_entity_mentions, compute_entity_overlap
 from src.models import train_evaluate
 from src.splitting import sample_negatives, random_split
 
 RESULTS_DIR = _PROJECT_ROOT / "results" / "exp2"
-# roberta-base used instead of nlpaueb/legal-bert-base-uncased:
-# GPU unavailable (CUDA driver too old), roberta-base is already cached locally.
-# The experiment logic is identical regardless of model choice.
-EMBED_MODEL = "roberta-base"
+EMBED_MODEL = "nlpaueb/legal-bert-base-uncased"
 
 
 def _assemble_features(
@@ -52,12 +50,14 @@ def _assemble_features(
     G,
     id_to_idx: dict[str, int],
     embeddings: np.ndarray,
+    mentions: dict,
     feature_set: str,
 ) -> np.ndarray:
     """Build feature matrix for a given feature_set name."""
     basic = compute_basic_features(G, pairs)          # (N, 3)
     triangle = compute_triangle_features(G, pairs)     # (N, 2)
     community = compute_community_features(G, pairs)   # (N, 2)
+    semantic = compute_entity_overlap(mentions, pairs) # (N, 2)
 
     # Text similarity: convert string pairs to int index pairs
     pair_idxs = [
@@ -76,6 +76,10 @@ def _assemble_features(
         return np.hstack([basic, triangle, community])
     elif feature_set == "combined":
         return np.hstack([basic, triangle, community, text_sim])
+    elif feature_set == "semantic":
+        return semantic
+    elif feature_set == "combined_full":
+        return np.hstack([basic, triangle, community, text_sim, semantic])
     else:
         raise ValueError(f"Unknown feature_set: {feature_set!r}")
 
@@ -99,6 +103,12 @@ def run() -> None:
     embeddings = load_or_compute_embeddings(texts, model_name=EMBED_MODEL, batch_size=16)
     id_to_idx = {str(int(float(row["id"]))): i for i, (_, row) in enumerate(df.iterrows())}
 
+    print("Loading entity mentions from Kuzu graph...")
+    mentions = load_entity_mentions()
+    coverage = sum(1 for n in all_nodes if n in mentions)
+    print(f"  Entity mentions loaded for {len(mentions)} cases "
+          f"({coverage}/{len(all_nodes)} graph nodes covered)")
+
     # Build train pairs
     train_pos = list(zip(train_edges["source_id"].astype(str), train_edges["target_id"].astype(str)))
     train_neg = sample_negatives(train_pos, all_nodes, existing_edges, seed=0)
@@ -115,15 +125,18 @@ def run() -> None:
     print(f"  Train pairs: {len(train_pairs)} ({len(train_pos)} pos + {len(train_neg)} neg)")
     print(f"  Test pairs:  {len(test_pairs)} ({len(test_pos)} pos + {len(test_neg)} neg)")
 
-    feature_sets = ["text_only", "graph_basic", "graph_triangle", "graph_community", "combined"]
+    feature_sets = [
+        "text_only", "graph_basic", "graph_triangle", "graph_community",
+        "combined", "semantic", "combined_full",
+    ]
     model_names = ["rf", "lr"]
     results_rows = []
     roc_data: dict[str, tuple] = {}
 
     for fs in feature_sets:
         print(f"\nAssembling features for: {fs}")
-        X_train = _assemble_features(train_pairs, G, id_to_idx, embeddings, fs)
-        X_test = _assemble_features(test_pairs, G, id_to_idx, embeddings, fs)
+        X_train = _assemble_features(train_pairs, G, id_to_idx, embeddings, mentions, fs)
+        X_test = _assemble_features(test_pairs, G, id_to_idx, embeddings, mentions, fs)
         for model_name in model_names:
             print(f"  {model_name.upper()} / {fs} ...")
             res = train_evaluate(X_train, train_labels, X_test, test_labels, model_name)
@@ -142,15 +155,15 @@ def run() -> None:
     print(results_df.to_string(index=False))
     results_df.to_csv(RESULTS_DIR / "ablation_results.csv", index=False)
 
-    # ROC curves (RF only)
+    # ROC curves (LR only — LR outperforms RF across all feature sets)
     fig, ax = plt.subplots(figsize=(7, 5))
     for fs in feature_sets:
-        fpr, tpr, auc = roc_data[f"{fs}_rf"]
+        fpr, tpr, auc = roc_data[f"{fs}_lr"]
         ax.plot(fpr, tpr, label=f"{fs} (AUC={auc:.3f})")
     ax.plot([0, 1], [0, 1], "k--", linewidth=0.8)
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
-    ax.set_title("ROC Curves — Link Prediction (Random Forest)")
+    ax.set_title("ROC Curves — Link Prediction (Logistic Regression)")
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
     fig.savefig(RESULTS_DIR / "roc_curves.png", dpi=150)

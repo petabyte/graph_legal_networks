@@ -1,4 +1,7 @@
-data/embeddings_roberta_base.npy
+data/
+logs/
+paper/
+docs/
 src/__pycache__/
 tests/__pycache__/
 **/__pycache__/
