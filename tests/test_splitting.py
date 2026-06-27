@@ -1,5 +1,5 @@
 import pandas as pd
-from src.splitting import temporal_split, sample_negatives, random_split
+from src.splitting import temporal_split, sample_negatives, random_split, sample_hard_negatives, sample_negatives_ranked
 
 
 def _make_edge_df() -> pd.DataFrame:
@@ -88,3 +88,88 @@ def test_random_split_reproducible():
     t2_train, t2_test = random_split(edges, seed=99)
     assert list(t1_train["source_id"]) == list(t2_train["source_id"])
     assert list(t1_test["source_id"]) == list(t2_test["source_id"])
+
+
+# --- sample_hard_negatives ---
+
+def _community() -> dict[str, int]:
+    # A, B in community 0; C, D, E, F in community 1
+    return {"A": 0, "B": 0, "C": 1, "D": 1, "E": 1, "F": 1}
+
+
+def test_sample_hard_negatives_length():
+    community = _community()
+    positive_pairs = [("A", "C"), ("B", "D")]
+    all_nodes = list(community.keys())
+    existing_edges: set[tuple[str, str]] = set()
+    result = sample_hard_negatives(positive_pairs, community, all_nodes, existing_edges, seed=0)
+    assert len(result) == len(positive_pairs)
+
+
+def test_sample_hard_negatives_no_existing_edge():
+    community = _community()
+    positive_pairs = [("A", "C")]
+    all_nodes = list(community.keys())
+    existing_edges = {("A", "C")}
+    result = sample_hard_negatives(positive_pairs, community, all_nodes, existing_edges, seed=1, hard_frac=1.0)
+    for u, w in result:
+        assert (u, w) not in existing_edges
+
+
+def test_sample_hard_negatives_hard_frac_one_prefers_same_community():
+    community = _community()
+    # Positive target is C (community 1); hard neg should be from {D, E, F}
+    positive_pairs = [("A", "C")]
+    all_nodes = list(community.keys())
+    existing_edges = {("A", "C")}
+    results = [
+        sample_hard_negatives(positive_pairs, community, all_nodes, existing_edges, seed=s, hard_frac=1.0)[0]
+        for s in range(20)
+    ]
+    # With hard_frac=1.0, all negatives should come from community 1 (same as C)
+    for u, w in results:
+        assert community.get(w) == 1, f"Expected community-1 hard neg, got {w} (community {community.get(w)})"
+
+
+def test_sample_hard_negatives_reproducible():
+    community = _community()
+    positive_pairs = [("A", "C"), ("B", "D")]
+    all_nodes = list(community.keys())
+    existing_edges: set[tuple[str, str]] = set()
+    r1 = sample_hard_negatives(positive_pairs, community, all_nodes, existing_edges, seed=7)
+    r2 = sample_hard_negatives(positive_pairs, community, all_nodes, existing_edges, seed=7)
+    assert r1 == r2
+
+
+# --- sample_negatives_ranked ---
+
+def test_sample_negatives_ranked_length():
+    community = _community()
+    positive_pairs = [("A", "C"), ("B", "D")]
+    all_nodes = list(community.keys())
+    existing_edges: set[tuple[str, str]] = set()
+    result = sample_negatives_ranked(positive_pairs, community, all_nodes, existing_edges, n_neg=3, seed=0)
+    assert len(result) == len(positive_pairs)
+    for neg_list in result:
+        assert len(neg_list) == 3
+
+
+def test_sample_negatives_ranked_no_duplicates_within_group():
+    community = _community()
+    positive_pairs = [("A", "C")]
+    all_nodes = list(community.keys())
+    existing_edges: set[tuple[str, str]] = set()
+    result = sample_negatives_ranked(positive_pairs, community, all_nodes, existing_edges, n_neg=4, seed=0)
+    targets = [w for _, w in result[0]]
+    assert len(targets) == len(set(targets)), "Duplicates found within ranking group"
+
+
+def test_sample_negatives_ranked_no_existing_edge():
+    community = _community()
+    positive_pairs = [("A", "C"), ("A", "D")]
+    all_nodes = list(community.keys())
+    existing_edges = {("A", "C"), ("A", "D")}
+    result = sample_negatives_ranked(positive_pairs, community, all_nodes, existing_edges, n_neg=2, seed=0)
+    for neg_list in result:
+        for u, w in neg_list:
+            assert (u, w) not in existing_edges

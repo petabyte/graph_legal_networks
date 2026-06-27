@@ -1,0 +1,15 @@
+feature_set,model,mrr,hits@1,hits@5,hits@10
+text_only,RF,0.4071,0.2334,0.6101,0.9637
+text_only,LR,0.5115,0.3256,0.7547,0.9602
+graph_basic,RF,0.5856,0.4451,0.7421,0.9385
+graph_basic,LR,0.6116,0.4682,0.7778,0.9294
+graph_triangle,RF,0.4704,0.3166,0.6429,0.8805
+graph_triangle,LR,0.612,0.4696,0.7771,0.9294
+graph_community,RF,0.5002,0.3291,0.7002,0.9741
+graph_community,LR,0.5614,0.4102,0.7352,0.9008
+combined,RF,0.4839,0.2788,0.7575,0.9867
+combined,LR,0.5851,0.4151,0.7973,0.9658
+semantic,RF,0.4408,0.2439,0.6967,0.9637
+semantic,LR,0.4566,0.2642,0.7184,0.9839
+combined_full,RF,0.5202,0.3424,0.7512,0.9769
+combined_full,LR,0.5885,0.4165,0.812,0.9706

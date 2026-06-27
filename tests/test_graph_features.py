@@ -7,6 +7,7 @@ from src.graph_features import (
     compute_basic_features,
     compute_community_features,
     compute_triangle_features,
+    get_louvain_communities,
 )
 
 
@@ -77,3 +78,28 @@ def test_features_handle_unknown_nodes_gracefully():
     assert triangle.shape == (1, 2)
     assert community.shape == (1, 2)
     # No crash, reasonable defaults (zeros or -1-based same community)
+
+
+# --- get_louvain_communities ---
+
+def test_get_louvain_communities_covers_all_nodes():
+    G = _small_graph()
+    comm = get_louvain_communities(G)
+    assert set(comm.keys()) == set(G.nodes())
+
+
+def test_get_louvain_communities_returns_int_ids():
+    G = _small_graph()
+    comm = get_louvain_communities(G)
+    for node, cid in comm.items():
+        assert isinstance(cid, int)
+
+
+def test_get_louvain_communities_consistent_with_compute_community_features():
+    G = _small_graph()
+    comm = get_louvain_communities(G)
+    # A and B are directly connected; check that same_community flag matches
+    pairs = [("A", "B")]
+    feat = compute_community_features(G, pairs)
+    expected = int(comm.get("A", -1) == comm.get("B", -2))
+    assert int(feat[0, 0]) == expected

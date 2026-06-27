@@ -52,7 +52,83 @@ def sample_negatives(
     for u, _ in positive_pairs:
         candidates = [n for n in all_nodes if n != u and (u, n) not in existing_edges]
         if not candidates:
-            # Fallback: any different node
             candidates = [n for n in all_nodes if n != u]
         negatives.append((u, rng.choice(candidates)))
     return negatives
+
+
+def sample_hard_negatives(
+    positive_pairs: list[tuple[str, str]],
+    community: dict[str, int],
+    all_nodes: list[str],
+    existing_edges: set[tuple[str, str]],
+    seed: int = 42,
+    hard_frac: float = 0.5,
+) -> list[tuple[str, str]]:
+    """
+    For each positive (u, v), sample one negative (u, w).
+    With probability hard_frac, w is drawn from the same Louvain community as v
+    (hard negative); otherwise w is random.  Falls back to random when no
+    same-community non-edge exists.
+    """
+    rng = random.Random(seed)
+    negatives: list[tuple[str, str]] = []
+    for u, v in positive_pairs:
+        hard_candidates: list[str] = []
+        if rng.random() < hard_frac:
+            v_comm = community.get(v, -1)
+            hard_candidates = [
+                n for n in all_nodes
+                if n != u and community.get(n, -2) == v_comm and (u, n) not in existing_edges
+            ]
+        if hard_candidates:
+            negatives.append((u, rng.choice(hard_candidates)))
+        else:
+            rand_candidates = [n for n in all_nodes if n != u and (u, n) not in existing_edges]
+            if not rand_candidates:
+                rand_candidates = [n for n in all_nodes if n != u]
+            negatives.append((u, rng.choice(rand_candidates)))
+    return negatives
+
+
+def sample_negatives_ranked(
+    positive_pairs: list[tuple[str, str]],
+    community: dict[str, int],
+    all_nodes: list[str],
+    existing_edges: set[tuple[str, str]],
+    n_neg: int = 10,
+    seed: int = 42,
+) -> list[list[tuple[str, str]]]:
+    """
+    For each positive (u, v), sample n_neg unique negatives without replacement.
+    Same-community candidates (hard negatives) are prioritised; any remaining
+    slots are filled with random non-edges.
+    Returns a list of lists: result[i] contains n_neg pairs for positive_pairs[i].
+    """
+    rng = random.Random(seed)
+    result: list[list[tuple[str, str]]] = []
+    for u, v in positive_pairs:
+        v_comm = community.get(v, -1)
+        hard_pool = [
+            n for n in all_nodes
+            if n != u and community.get(n, -2) == v_comm and (u, n) not in existing_edges
+        ]
+        rand_pool = [
+            n for n in all_nodes
+            if n != u and (u, n) not in existing_edges
+        ]
+        rng.shuffle(hard_pool)
+        rng.shuffle(rand_pool)
+        seen: set[str] = set()
+        negs: list[tuple[str, str]] = []
+        for pool in (hard_pool, rand_pool):
+            for n in pool:
+                if len(negs) >= n_neg:
+                    break
+                if n not in seen:
+                    negs.append((u, n))
+                    seen.add(n)
+            if len(negs) >= n_neg:
+                break
+        result.append(negs)
+    return result

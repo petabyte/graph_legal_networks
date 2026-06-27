@@ -9,9 +9,29 @@ Feature sets:
   graph_community — graph_triangle + same-community indicators (Louvain + LP)
   combined        — all graph features + text similarity
 
+Negative sampling:
+  Training: 50 % hard (same Louvain community as positive target, not cited)
+            + 50 % random non-edges, 1:1 ratio.
+  Binary test: same hard/random mix.
+  Ranking test: 10 negatives per positive (same-community preferred).
+
+Evaluation:
+  Binary classification: AUC, Precision, Recall, F1 (saved to ablation_results.csv)
+  Ranking (1 pos vs 10 neg): MRR, Hits@1, Hits@5, Hits@10
+           (saved to ranking_metrics.csv)
+
+Graph features (common neighbours, Louvain communities, etc.) are computed
+from the training subgraph only — no test edges are present in G.
+
+Note on temporal split: the dataset's `date_created` field records the
+CourtListener database-ingestion timestamp (clusters ~2010), not the actual
+SCOTUS decision date.  A meaningful temporal split would require extracting
+decision years from opinion text (e.g. via LLM); this is left for future work.
+
 Output files (in results/exp2/):
   ablation_results.csv  — feature_set × model × AUC/F1/Precision/Recall
-  roc_curves.png        — ROC curves for all feature sets (RF only)
+  ranking_metrics.csv   — feature_set × model × MRR/Hits@1/Hits@5/Hits@10
+  roc_curves.png        — ROC curves for all feature sets (LR only)
 """
 from __future__ import annotations
 
@@ -36,13 +56,19 @@ from src.graph_features import (
     compute_basic_features,
     compute_community_features,
     compute_triangle_features,
+    get_louvain_communities,
 )
 from src.kuzu_features import load_entity_mentions, compute_entity_overlap
-from src.models import train_evaluate
-from src.splitting import sample_negatives, random_split
+from src.models import train_evaluate, ranking_metrics
+from src.splitting import (
+    random_split,
+    sample_hard_negatives,
+    sample_negatives_ranked,
+)
 
 RESULTS_DIR = _PROJECT_ROOT / "results" / "exp2"
 EMBED_MODEL = "nlpaueb/legal-bert-base-uncased"
+N_RANK_NEG = 10  # negatives per positive in the ranking evaluation
 
 
 def _assemble_features(
@@ -91,13 +117,19 @@ def run() -> None:
     df = load_scotus_cases()
     edges = build_edge_list(df)
 
-    print("Random 80/20 split (dataset lacks reliable decision dates)...")
+    print("Random 80/20 split...")
     train_edges, test_edges = random_split(edges, test_frac=0.2, seed=42)
     print(f"  Train edges: {len(train_edges)}, Test edges: {len(test_edges)}")
 
+    # Build training-only graph.  All graph features are computed from G so
+    # that no test-edge neighbourhoods leak into the feature matrix.
     G = build_nx_graph(train_edges)
     all_nodes = list(G.nodes())
     existing_edges = set(zip(train_edges["source_id"].astype(str), train_edges["target_id"].astype(str)))
+
+    # Community assignments from the training graph — used for hard-negative sampling.
+    print("Computing Louvain communities on training graph...")
+    community = get_louvain_communities(G)
 
     texts = df["html_with_citations"].fillna("").tolist()
     embeddings = load_or_compute_embeddings(texts, model_name=EMBED_MODEL, batch_size=16)
@@ -109,21 +141,41 @@ def run() -> None:
     print(f"  Entity mentions loaded for {len(mentions)} cases "
           f"({coverage}/{len(all_nodes)} graph nodes covered)")
 
-    # Build train pairs
+    all_edges_set = set(zip(edges["source_id"].astype(str), edges["target_id"].astype(str)))
+
+    # --- Training pairs: 1:1 hard/random mix ---
     train_pos = list(zip(train_edges["source_id"].astype(str), train_edges["target_id"].astype(str)))
-    train_neg = sample_negatives(train_pos, all_nodes, existing_edges, seed=0)
+    train_neg = sample_hard_negatives(
+        train_pos, community, all_nodes, existing_edges, seed=0, hard_frac=0.5
+    )
     train_pairs = train_pos + train_neg
     train_labels = np.array([1] * len(train_pos) + [0] * len(train_neg))
 
-    # Build test pairs
+    # --- Binary test pairs: same hard/random mix ---
     test_pos = list(zip(test_edges["source_id"].astype(str), test_edges["target_id"].astype(str)))
-    all_edges_set = set(zip(edges["source_id"].astype(str), edges["target_id"].astype(str)))
-    test_neg = sample_negatives(test_pos, all_nodes, all_edges_set, seed=42)
+    test_neg = sample_hard_negatives(
+        test_pos, community, all_nodes, all_edges_set, seed=42, hard_frac=0.5
+    )
     test_pairs = test_pos + test_neg
     test_labels = np.array([1] * len(test_pos) + [0] * len(test_neg))
 
     print(f"  Train pairs: {len(train_pairs)} ({len(train_pos)} pos + {len(train_neg)} neg)")
     print(f"  Test pairs:  {len(test_pairs)} ({len(test_pos)} pos + {len(test_neg)} neg)")
+
+    # --- Ranking test set: 1 positive + N_RANK_NEG negatives per query ---
+    print(f"Building ranking test set (1 pos + {N_RANK_NEG} hard/random neg per query)...")
+    ranking_neg_groups = sample_negatives_ranked(
+        test_pos, community, all_nodes, all_edges_set, n_neg=N_RANK_NEG, seed=42
+    )
+    ranking_pairs: list[tuple[str, str]] = []
+    ranking_labels_list: list[int] = []
+    for (u, v), neg_list in zip(test_pos, ranking_neg_groups):
+        ranking_pairs.append((u, v))
+        ranking_labels_list.append(1)
+        ranking_pairs.extend(neg_list)
+        ranking_labels_list.extend([0] * len(neg_list))
+    ranking_labels = np.array(ranking_labels_list)
+    ranking_group_size = N_RANK_NEG + 1  # 1 pos + N_RANK_NEG neg
 
     feature_sets = [
         "text_only", "graph_basic", "graph_triangle", "graph_community",
@@ -131,15 +183,19 @@ def run() -> None:
     ]
     model_names = ["rf", "lr"]
     results_rows = []
+    ranking_rows = []
     roc_data: dict[str, tuple] = {}
 
     for fs in feature_sets:
         print(f"\nAssembling features for: {fs}")
         X_train = _assemble_features(train_pairs, G, id_to_idx, embeddings, mentions, fs)
         X_test = _assemble_features(test_pairs, G, id_to_idx, embeddings, mentions, fs)
+        X_ranking = _assemble_features(ranking_pairs, G, id_to_idx, embeddings, mentions, fs)
+
         for model_name in model_names:
             print(f"  {model_name.upper()} / {fs} ...")
             res = train_evaluate(X_train, train_labels, X_test, test_labels, model_name)
+
             results_rows.append({
                 "feature_set": fs,
                 "model": model_name.upper(),
@@ -150,10 +206,27 @@ def run() -> None:
             })
             roc_data[f"{fs}_{model_name}"] = (res["fpr"], res["tpr"], res["auc"])
 
+            # Score ranking test set with the same fitted model / scaler
+            clf = res["clf"]
+            scaler = res["scaler"]
+            X_r = scaler.transform(X_ranking) if scaler is not None else X_ranking
+            rank_scores = clf.predict_proba(X_r)[:, 1]
+            r_metrics = ranking_metrics(ranking_labels, rank_scores, group_size=ranking_group_size)
+            ranking_rows.append({
+                "feature_set": fs,
+                "model": model_name.upper(),
+                **r_metrics,
+            })
+
     results_df = pd.DataFrame(results_rows)
-    print("\nAblation results:")
+    print("\nAblation results (binary classification):")
     print(results_df.to_string(index=False))
     results_df.to_csv(RESULTS_DIR / "ablation_results.csv", index=False)
+
+    ranking_df = pd.DataFrame(ranking_rows)
+    print(f"\nRanking metrics (1 pos vs {N_RANK_NEG} hard/random neg):")
+    print(ranking_df.to_string(index=False))
+    ranking_df.to_csv(RESULTS_DIR / "ranking_metrics.csv", index=False)
 
     # ROC curves (LR only — LR outperforms RF across all feature sets)
     fig, ax = plt.subplots(figsize=(7, 5))

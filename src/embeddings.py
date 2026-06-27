@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import torch
-from transformers import AutoModel, AutoTokenizer
 
 from src.graph_builder import _strip_html
 
@@ -12,9 +10,8 @@ MODEL_NAME = "nlpaueb/legal-bert-base-uncased"
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def _mean_pool(
-    token_embeddings: torch.Tensor, attention_mask: torch.Tensor
-) -> torch.Tensor:
+def _mean_pool(token_embeddings, attention_mask):
+    import torch
     mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * mask_expanded, dim=1) / torch.clamp(
         mask_expanded.sum(dim=1), min=1e-9
@@ -23,6 +20,8 @@ def _mean_pool(
 
 class LegalBertEmbedder:
     def __init__(self, model_name: str = MODEL_NAME):
+        import torch
+        from transformers import AutoModel, AutoTokenizer
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name).to(self.device)
@@ -35,6 +34,7 @@ class LegalBertEmbedder:
         Returns (N, 768) float32 mean-pooled embeddings.
         Uses GPU automatically when available.
         """
+        import torch
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
             batch = [_strip_html(t) for t in texts[i: i + batch_size]]

@@ -52,6 +52,13 @@ def compute_triangle_features(G: nx.DiGraph, pairs: list[tuple[str, str]]) -> np
     return np.array(rows, dtype=float)
 
 
+def get_louvain_communities(G: nx.DiGraph) -> dict[str, int]:
+    """Return node → community-id mapping via Louvain on the undirected projection."""
+    U = G.to_undirected()
+    comms = louvain_communities(U, seed=42)
+    return {node: i for i, comm in enumerate(comms) for node in comm}
+
+
 def compute_community_features(G: nx.DiGraph, pairs: list[tuple[str, str]]) -> np.ndarray:
     """
     For each (u, v) pair return [same_louvain_community, same_label_prop_community].
